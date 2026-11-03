@@ -18,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Assume build role via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_BUILD_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
@@ -38,7 +38,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
 
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: "${{ steps.ecr-login.outputs.registry }}/llm-forecast-pipeline:${{ github.sha }}"
           severity: "HIGH,CRITICAL"
