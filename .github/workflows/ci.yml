@@ -1,0 +1,89 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev,notebooks]"
+      - name: Lint
+        run: |
+          ruff check src tests
+          ruff format --check src tests
+      - name: Test
+        run: pytest
+      - name: Notebooks execute cleanly
+        run: jupyter nbconvert --to notebook --execute --output-dir /tmp/nb-out notebooks/*.ipynb
+      - name: Notebooks have no committed outputs
+        run: |
+          pip install nbstripout
+          for f in notebooks/*.ipynb; do
+            nbstripout --verify "$f" || { echo "::error file=$f::notebook has committed outputs, run nbstripout"; exit 1; }
+          done
+      - name: Dependency audit
+        run: |
+          pip install pip-audit
+          pip-audit
+      - name: License check
+        run: |
+          pip install pip-licenses
+          pip-licenses --format=markdown --with-urls --fail-on="GPL;AGPL"
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (full history)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - uses: azure/setup-helm@v4
+      - name: Terraform fmt & validate
+        run: |
+          set -e
+          for dir in infra/terraform/bootstrap infra/terraform/env; do
+            if ls "$dir"/*.tf >/dev/null 2>&1; then
+              echo "::group::terraform $dir"
+              terraform -chdir="$dir" fmt -check -recursive
+              terraform -chdir="$dir" init -backend=false
+              terraform -chdir="$dir" validate
+              echo "::endgroup::"
+            else
+              echo "no .tf files in $dir yet, skipping (expected before the AWS infra phase)"
+            fi
+          done
+        env:
+          TF_IN_AUTOMATION: "true"
+      - name: Helm lint & template
+        run: |
+          if ls deploy/helm/forecaster/Chart.yaml >/dev/null 2>&1; then
+            helm lint deploy/helm/forecaster
+            helm template deploy/helm/forecaster >/dev/null
+          else
+            echo "no Helm chart yet, skipping (expected before the Kubernetes deploy phase)"
+          fi

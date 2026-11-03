@@ -1,0 +1,70 @@
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "Dockerfile"
+      - "pyproject.toml"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assume build role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_BUILD_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          mask-aws-account-id: true
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        run: |
+          docker build -t "$ECR_REGISTRY/llm-forecast-pipeline:${{ github.sha }}" .
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "${{ steps.ecr-login.outputs.registry }}/llm-forecast-pipeline:${{ github.sha }}"
+          severity: "HIGH,CRITICAL"
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: "${{ steps.ecr-login.outputs.registry }}/llm-forecast-pipeline:${{ github.sha }}"
+          artifact-name: sbom.spdx.json
+          output-file: sbom.spdx.json
+
+      - name: Push image (immutable tag)
+        run: docker push "$ECR_REGISTRY/llm-forecast-pipeline:${{ github.sha }}"
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+
+      - name: Resolve and record digest
+        run: |
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
+            "$ECR_REGISTRY/llm-forecast-pipeline:${{ github.sha }}" | cut -d'@' -f2)
+          echo "## Image digest" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "Use this digest in guide 09, step 3 (deploy/argocd/application.yaml)." >> "$GITHUB_STEP_SUMMARY"
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}

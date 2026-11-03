@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A daily LLM forecasting pipeline with a public, hash-chained track record."
 readme = "README.md"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Benedict Mbakogu" }]
+authors = [{ name = "Benedict Mbakogu — Lone Cowry Ventures" }]
 requires-python = ">=3.11"
 dependencies = [
   "httpx>=0.27",
@@ -43,6 +43,10 @@ notebooks = [
   "matplotlib>=3.8",
   "pandas>=2.2",
 ]
+
+[project.urls]
+Homepage = "https://lonecowry.com"
+Repository = "https://github.com/9jaboii/llm-forecast-pipeline"
 
 [project.scripts]
 forecaster = "forecaster.cli:app"

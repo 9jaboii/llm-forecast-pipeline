@@ -1,0 +1,68 @@
+name: pages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 14 * * *"  # daily, after the pipeline's own daily run
+
+permissions:
+  id-token: write
+  contents: read
+  pages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Assume pages role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PAGES_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          mask-aws-account-id: true
+
+      - name: Find newest snapshot
+        id: find
+        run: |
+          set -euo pipefail
+          LATEST=$(aws s3api list-objects-v2 \
+            --bucket "${{ secrets.TRACK_RECORD_BUCKET }}" \
+            --prefix "snapshots/" \
+            --query 'reverse(sort_by(Contents[?ends_with(Key, `manifest.json`)], &LastModified))[0].Key' \
+            --output text)
+          if [ "$LATEST" = "None" ] || [ -z "$LATEST" ]; then
+            echo "::error::no snapshots found under snapshots/ in the bucket"
+            exit 1
+          fi
+          PREFIX=$(dirname "$LATEST")
+          echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
+
+      - name: Download snapshot
+        run: |
+          mkdir -p site
+          aws s3 cp "s3://${{ secrets.TRACK_RECORD_BUCKET }}/${{ steps.find.outputs.prefix }}/" site/ --recursive
+
+      - name: Verify every file against the manifest's SHA-256
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, sys
+
+          manifest = json.load(open("site/manifest.json"))
+          for name, expected in manifest["files"].items():
+              actual = hashlib.sha256(open(f"site/{name}", "rb").read()).hexdigest()
+              if actual != expected:
+                  print(f"::error::hash mismatch for {name}: expected {expected}, got {actual}")
+                  sys.exit(1)
+              print(f"{name}: OK")
+          PY
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
