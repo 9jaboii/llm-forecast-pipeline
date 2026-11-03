@@ -1,0 +1,63 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.tfvars
+!*.tfvars.example
+backend.hcl
+!backend.hcl.example
+
+# Terraform state and working dirs
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+tfplan
+infra/terraform/bootstrap/*.tfstate*
+infra/terraform/bootstrap/.terraform*
+
+# Account-specific deploy manifests
+deploy/argocd/application.yaml
+
+# Kubernetes credentials
+kubeconfig
+*.kubeconfig
+.kube/
+
+# Generated / fetched data (never commit third-party content)
+data/
+models/
+public/
+public_demo/
+# Local operations dashboard — shows headlines, so it must never be published
+# or committed (see docs/adr/0005-data-licensing-and-leakage.md)
+ops/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Reports
+licenses-report.md
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Private planning material — not part of the public project
+llm-forecast-pipeline-guide.pdf
+
+# Claude Code personal overrides and local session state
+.claude/settings.local.json
+CLAUDE.local.md
+.claude/scheduled_tasks.lock

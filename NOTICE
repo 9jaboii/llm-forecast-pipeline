@@ -1,0 +1,20 @@
+LLM Forecast Pipeline
+Copyright 2026 Benedict Mbakogu
+
+This product includes news article metadata (URL, headline, domain, date)
+retrieved from the GDELT Project (https://www.gdeltproject.org/). Article
+bodies are never downloaded or redistributed; headlines are used only as
+private model input. "GDELT" and "The GDELT Project" are credited here and
+on the published track-record site as required by the GDELT terms of use.
+
+This product retrieves public question and market data from Manifold
+Markets (https://manifold.markets/) via its public read API. Only question
+titles, links, and this project's own probability forecasts are published;
+no third-party content is redistributed.
+
+This product uses the Anthropic API and/or Amazon Bedrock to call Claude
+models. Model responses are used to compute probabilities; by default,
+rationales are not published. See https://www.anthropic.com/legal/aup for
+the Anthropic Usage Policy this project follows.
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).

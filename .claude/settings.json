@@ -1,0 +1,43 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/*.tfvars)",
+      "Read(**/backend.hcl)",
+      "Read(**/*.tfstate)",
+      "Read(**/*.tfstate.*)",
+      "Read(**/.terraform/**)",
+      "Read(deploy/argocd/application.yaml)",
+      "Read(~/.aws/**)",
+      "Read(~/.ssh/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.config/gh/**)",
+      "Bash(gh auth token:*)",
+      "Bash(aws configure get:*)",
+      "Bash(cat ~/.aws/*)",
+      "Bash(cat ~/.ssh/*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh secret set:*)",
+      "Bash(terraform apply:*)",
+      "Bash(terraform destroy:*)",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl delete:*)",
+      "Bash(kubectl create:*)",
+      "Bash(kubectl patch:*)",
+      "Bash(kubectl scale:*)",
+      "Bash(kubectl rollout:*)",
+      "Bash(aws s3api delete-objects:*)",
+      "Bash(aws ecr batch-delete-image:*)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true
+  }
+}

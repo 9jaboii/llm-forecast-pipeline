@@ -1,0 +1,17 @@
+title = "llm-forecast-pipeline gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Exclude git-ignored, vendored, and generated directories from filesystem scans"
+paths = [
+  '''\.venv/''',
+  '''\.terraform/''',
+  '''node_modules/''',
+  '''(^|/)data/''',
+  '''(^|/)models/''',
+  '''(^|/)public/''',
+  '''\.git/''',
+  '''\.ipynb_checkpoints/''',
+]
