@@ -51,8 +51,8 @@ echo "           (not exposed via the API; set this by hand once)"
 echo "-- Environments --"
 for env in build github-pages; do
   if api -X PUT "repos/$REPO/environments/$env" \
-      -f 'deployment_branch_policy[protected_branches]=false' \
-      -f 'deployment_branch_policy[custom_branch_policies]=true' >/dev/null 2>&1; then
+      -F 'deployment_branch_policy[protected_branches]=false' \
+      -F 'deployment_branch_policy[custom_branch_policies]=true' >/dev/null 2>&1; then
     api -X POST "repos/$REPO/environments/$env/deployment-branch-policies" \
       -f name=main >/dev/null 2>&1 || true
     echo "  [ok] environment '$env' created, limited to main"
@@ -79,7 +79,14 @@ RULESET_JSON=$(cat <<'JSON'
 }
 JSON
 )
-if echo "$RULESET_JSON" | api -X POST "repos/$REPO/rulesets" --input - >/dev/null 2>&1; then
+EXISTING_RULESET_ID="$(api "repos/$REPO/rulesets" --jq '.[] | select(.name == "main-protection") | .id' 2>/dev/null || true)"
+if [[ -n "$EXISTING_RULESET_ID" ]]; then
+  if echo "$RULESET_JSON" | api -X PUT "repos/$REPO/rulesets/$EXISTING_RULESET_ID" --input - >/dev/null 2>&1; then
+    echo "  [ok] ruleset already existed, updated: no force-push, no deletion, required checks"
+  else
+    echo "  [skipped] branch ruleset update failed — check Settings > Rules > Rulesets"
+  fi
+elif echo "$RULESET_JSON" | api -X POST "repos/$REPO/rulesets" --input - >/dev/null 2>&1; then
   echo "  [ok] ruleset created: no force-push, no deletion, required checks"
 else
   echo "  [skipped] branch ruleset — create in Settings > Rules > Rulesets"
