@@ -1,0 +1,9 @@
+apiVersion: v2
+name: forecaster
+description: >
+  The LLM Forecast Pipeline — read-only API, daily forecast CronJob, and
+  calibration CronJob. The same chart deploys to a local kind cluster or a
+  real AWS EKS sandbox; only values.yaml differs (see docs/adr/0002).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

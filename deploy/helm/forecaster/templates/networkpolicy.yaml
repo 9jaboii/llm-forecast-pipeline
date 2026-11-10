@@ -1,0 +1,38 @@
+# Default-deny egress, then allowlist exactly what this project needs:
+# DNS, the in-namespace Postgres, and HTTPS out.
+#
+# Honest limitation: plain Kubernetes NetworkPolicy filters on IP/CIDR and
+# port, not hostname — there is no native way to say "only
+# api.manifold.markets, api.gdeltproject.org, api.anthropic.com" at this
+# layer. What this *does* enforce: no egress at all except DNS, Postgres,
+# and port 443 — no raw TCP to arbitrary ports, no plaintext HTTP, nothing
+# bypassing TLS. The "only these three APIs" half of the claim in
+# docs/adr/0004-tenant-isolation.md is enforced by there being no other code
+# path in this repository that makes an outbound call, not by the network
+# layer. A stricter, hostname-aware policy would need a CNI with
+# DNS/FQDN-based network policies (e.g. Cilium); see
+# docs/runbooks/local-k8s.md for what this cluster actually uses and why.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forecaster-default-deny-egress
+  namespace: {{ .Values.namespace }}
+  labels: {{ include "forecaster.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - to:
+        - podSelector:
+            matchLabels: { app: postgres }
+      ports:
+        - { protocol: TCP, port: 5432 }
+    - to:
+        - ipBlock: { cidr: {{ .Values.networkPolicy.allowedEgressCIDR | quote }} }
+      ports:
+        - { protocol: TCP, port: 443 }

@@ -22,11 +22,22 @@ it's a property the system enforces, not a sentence in a README.
   the integration map: Manifold Markets, GDELT, and Bedrock/Anthropic —
   always made directly from the deployer's own VPC/account, never through
   an intermediary.
-- This is enforced by a default-deny egress `NetworkPolicy`
-  (`deploy/helm/forecaster/templates/networkpolicy.yaml`) that allowlists
-  only DNS, the in-cluster database, and those three external hosts.
-  Verify it directly with `kubectl -n forecaster describe networkpolicy`
-  rather than taking the claim on faith.
+- This is partly enforced by a default-deny egress `NetworkPolicy`
+  (`deploy/helm/forecaster/templates/networkpolicy.yaml`): no egress at all
+  except DNS, the in-namespace Postgres, and port 443 — no raw TCP to
+  arbitrary ports, no plaintext HTTP. Verify it directly with
+  `kubectl -n forecaster describe networkpolicy`, not on faith. Be precise
+  about what this does and doesn't prove: plain Kubernetes `NetworkPolicy`
+  filters on IP/CIDR and port, not hostname, so it cannot by itself
+  restrict egress to exactly `api.manifold.markets` / `api.gdeltproject.org`
+  / the Anthropic/Bedrock endpoints — any HTTPS destination is technically
+  reachable at the network layer. The "only these three APIs" half of the
+  claim rests on there being no other code path in this (open source, so
+  checkable) repository that makes an outbound call — a code-review
+  guarantee, not a network one. A stricter, hostname-aware version would
+  need a CNI with DNS/FQDN-based policies (e.g. Cilium); see
+  `docs/runbooks/local-k8s.md` for what's actually running and why that
+  wasn't pulled in for this project's scope.
 
 ## Reasoning
 Enterprise buyers evaluating an AI system often weigh data residency and

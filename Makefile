@@ -39,6 +39,13 @@ dashboard:
 
 kind-up:
 	kind create cluster --name forecaster --config deploy/kind/cluster.yaml
+	kubectl apply -f deploy/namespace.yaml
+	kubectl apply -f deploy/kind/postgres.yaml
+	kubectl -n forecaster rollout status deployment/postgres --timeout=60s
+	docker build -t llm-forecast-pipeline:local .
+	kind load docker-image llm-forecast-pipeline:local --name forecaster
+	helm upgrade --install forecaster deploy/helm/forecaster --namespace forecaster
+	kubectl -n forecaster rollout status deployment/forecaster-api --timeout=60s
 
 kind-down:
 	kind delete cluster --name forecaster
