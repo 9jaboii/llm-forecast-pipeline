@@ -1,0 +1,61 @@
+# Local-only stand-in for RDS PostgreSQL (guide §08). Never used in the AWS
+# sandbox — there, the app connects to RDS via FC_DB_SECRET_ARN. This exists
+# purely so the Helm chart has something real to talk to inside `kind`.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: forecaster-db-local
+  namespace: forecaster
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: forecaster-dev-only
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: forecaster
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports: [{ containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_DB, value: forecaster }
+            - { name: POSTGRES_USER, value: forecaster }
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: forecaster-db-local, key: POSTGRES_PASSWORD }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "forecaster"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - { name: data, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: forecaster
+spec:
+  selector: { app: postgres }
+  ports: [{ port: 5432, targetPort: 5432 }]

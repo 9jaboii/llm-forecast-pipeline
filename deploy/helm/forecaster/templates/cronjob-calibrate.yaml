@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: forecaster-calibrate
+  namespace: {{ .Values.namespace }}
+  labels: {{ include "forecaster.labels" . | nindent 4 }}
+spec:
+  # Never runs on its own — trigger manually once ~50+ questions have
+  # resolved: kubectl create job calibrate-$(date +%Y%m%d) --from=cronjob/forecaster-calibrate
+  schedule: "0 0 1 1 *"
+  suspend: {{ .Values.calibrateCronSuspended }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels: {{ include "forecaster.labels" . | nindent 12 }}
+        spec:
+          serviceAccountName: {{ .Values.serviceAccount.name }}
+          restartPolicy: OnFailure
+          securityContext: {{ include "forecaster.securityContext.pod" . | nindent 12 }}
+          containers:
+            - name: calibrate
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["forecaster", "calibrate"]
+              envFrom: {{ include "forecaster.envFrom" . | nindent 16 }}
+              securityContext: {{ include "forecaster.securityContext.container" . | nindent 16 }}
+              volumeMounts:
+                - { name: tmp, mountPath: /tmp }
+              resources:
+                requests: { cpu: 100m, memory: 256Mi }
+                limits: { cpu: "1", memory: 1Gi }
+          volumes:
+            - { name: tmp, emptyDir: {} }

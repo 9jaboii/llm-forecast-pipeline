@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forecaster-config
+  namespace: {{ .Values.namespace }}
+  labels: {{ include "forecaster.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  FC_DB_HOST: {{ .Values.database.host | quote }}
+  FC_TRACK_RECORD_BUCKET: {{ .Values.trackRecord.bucket | quote }}
+  FC_CALIBRATOR_PATH: {{ .Values.trackRecord.calibratorPath | quote }}
+  {{- if not .Values.database.secretArn }}
+  FC_DATABASE_URL: {{ .Values.database.url | quote }}
+  {{- end }}
+  {{- if .Values.database.secretArn }}
+  FC_DB_SECRET_ARN: {{ .Values.database.secretArn | quote }}
+  {{- end }}
+  {{- if .Values.llm.bedrockModelId }}
+  FC_BEDROCK_MODEL_ID: {{ .Values.llm.bedrockModelId | quote }}
+  {{- end }}
+  {{- if .Values.llm.anthropicModel }}
+  FC_ANTHROPIC_MODEL: {{ .Values.llm.anthropicModel | quote }}
+  {{- end }}

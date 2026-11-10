@@ -48,10 +48,12 @@ flowchart LR
     Publish --> Pages["GitHub Pages (public track record)"]
 ```
 
-Nothing else is reachable from inside the namespace: a default-deny egress
-`NetworkPolicy` allows only DNS, the database, and the three external APIs
-above. No data or activity is visible outside the VPC it runs in, including
-to anyone operating this repository.
+A default-deny egress `NetworkPolicy` blocks everything except DNS, the
+database, and HTTPS (443) — no raw TCP, no plaintext HTTP. Plain Kubernetes
+`NetworkPolicy` can't restrict *which* HTTPS hosts by name, so the "only
+these three APIs" half of the isolation claim rests on code review of this
+open-source repo, not the network layer alone — see
+`docs/adr/0004-tenant-isolation.md` for the precise boundary.
 
 ## Project layout
 

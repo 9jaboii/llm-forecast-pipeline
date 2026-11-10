@@ -1,0 +1,60 @@
+# Default values target a local `kind` cluster: fake LLM provider (free,
+# no external calls), the dev-only Postgres from deploy/kind/postgres.yaml.
+# The AWS sandbox burst overrides image, database, and llm values at
+# install time — see docs/runbooks/aws-sandbox-burst.md — nothing here is
+# account-specific.
+
+namespace: forecaster
+
+image:
+  repository: llm-forecast-pipeline
+  tag: local
+  pullPolicy: IfNotPresent
+
+api:
+  replicaCount: 2
+  port: 8000
+
+serviceAccount:
+  name: forecaster
+
+env:
+  FC_LLM_PROVIDER: "fake"
+  FC_AWS_REGION: "us-east-1"
+  FC_SAMPLES: "5"
+  FC_TEMPERATURE: "0.7"
+  FC_MAX_ARTICLES: "8"
+  FC_LOOKBACK_DAYS: "14"
+  FC_MAX_QUESTIONS: "10"
+  FC_MIN_BETTORS: "10"
+  FC_ENABLE_DOCS: "false"
+  FC_TRACK_RECORD_DIR: "/tmp/public"
+  FC_DB_NAME: "forecaster"
+  FC_DB_PORT: "5432"
+
+# Local kind default: plain connection string to the in-namespace dev
+# Postgres. The AWS sandbox overrides this with dbSecretArn/dbHost instead
+# (see config.py: DB_SECRET_ARN takes precedence when set).
+database:
+  url: "postgresql+psycopg://forecaster:forecaster-dev-only@postgres:5432/forecaster"
+  secretArn: ""
+  host: ""
+
+# Only used when FC_LLM_PROVIDER=anthropic (never committed — pass with
+# `helm install --set llm.anthropicApiKey=...` for a local real-data test).
+llm:
+  anthropicApiKey: ""
+  anthropicModel: ""
+  bedrockModelId: ""
+
+trackRecord:
+  bucket: ""
+  calibratorPath: "/tmp/models/calibrator.json"
+
+dailyCronSchedule: "15 13 * * *"
+calibrateCronSuspended: true
+
+networkPolicy:
+  # The three external hosts this project ever talks to (see
+  # docs/adr/0004-tenant-isolation.md) plus the in-namespace Postgres.
+  allowedEgressCIDR: "0.0.0.0/0"
