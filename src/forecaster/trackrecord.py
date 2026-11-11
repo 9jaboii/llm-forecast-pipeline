@@ -131,6 +131,10 @@ tamper-evident.</p>
 {rows}
 </tbody>
 </table>
+<p>Headlines informing these forecasts are sourced from
+<a href="https://www.gdeltproject.org/">The GDELT Project</a> and/or
+<a href="https://newsapi.org/">NewsAPI.org</a>, depending on configuration —
+article text itself is never downloaded, stored, or republished here.</p>
 </body>
 </html>
 """

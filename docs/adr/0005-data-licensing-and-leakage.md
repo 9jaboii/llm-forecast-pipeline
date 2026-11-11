@@ -14,7 +14,7 @@ never sees information from after the forecast was made.
 | Source | Fetched | Stored | Published |
 |---|---|---|---|
 | Manifold Markets | question text, link, close date, market probability, resolution | yes (database) | question title and link only, alongside this project's own forecasts |
-| GDELT DOC 2.0 | article metadata only: URL, headline, domain, date | yes (database) | no — headlines are model input, never republished |
+| GDELT DOC 2.0 or NewsAPI.org (`FC_NEWS_PROVIDER`, see ADR 0007) | article metadata only: URL, headline, domain, date | yes (database) | no — headlines are model input, never republished |
 | Claude (Anthropic/Bedrock) | model responses | probability + rationale in the database | probability only; rationale not published by default |
 
 Article *bodies* are never downloaded. Full news articles are copyrighted;
