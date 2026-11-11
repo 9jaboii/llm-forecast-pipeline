@@ -11,7 +11,7 @@ from forecaster.config import Settings
 from forecaster.db import Article, Forecast, Question
 from forecaster.llm.base import LLMClient
 from forecaster.retrieval import ArticleLike, extract_keywords, select_articles
-from forecaster.sources import gdelt, manifold
+from forecaster.sources import manifold, news
 from forecaster.timeutil import utcnow
 
 SYSTEM_PROMPT = (
@@ -49,7 +49,9 @@ def ingest_questions(session_factory: sessionmaker[Session], settings: Settings)
                 questions_added += 1
 
             keywords = extract_keywords(q.title)
-            headlines = gdelt.fetch_headlines(keywords, lookback_start, now, settings.MAX_ARTICLES)
+            headlines = news.fetch_headlines(
+                settings, keywords, lookback_start, now, settings.MAX_ARTICLES
+            )
             existing_urls = {
                 a.url for a in session.scalars(select(Article).where(Article.question_id == q.id))
             }

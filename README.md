@@ -13,7 +13,7 @@ system, not just a model call behind an API.
 Every day, the pipeline:
 
 1. Fetches open yes/no questions from [Manifold Markets](https://manifold.markets/).
-2. Fetches recent news headlines about each question from [GDELT](https://www.gdeltproject.org/) (metadata only — article bodies are never downloaded or republished).
+2. Fetches recent news headlines about each question from [GDELT](https://www.gdeltproject.org/) or [NewsAPI.org](https://newsapi.org/) — swappable via `FC_NEWS_PROVIDER`, see `docs/adr/0007-swappable-news-provider.md` (metadata only — article bodies are never downloaded or republished).
 3. Asks Claude for a probability, five times, and takes the median.
 4. Corrects the probability with a small calibrator fitted on past results (Platt scaling or isotonic regression, chosen by how much resolved history exists).
 5. Records the forecast in a hash-chained database — editing any past forecast breaks the chain, so the history is tamper-evident without needing a blockchain.
@@ -41,7 +41,7 @@ flowchart LR
         CronJob["forecaster-daily CronJob"] --> DB[(PostgreSQL)]
         API["forecaster-api (read-only)"] --> DB
         CronJob -->|HTTPS| Manifold["Manifold Markets API"]
-        CronJob -->|HTTPS| GDELT["GDELT DOC 2.0 API"]
+        CronJob -->|HTTPS| GDELT["GDELT or NewsAPI.org"]
         CronJob -->|HTTPS| LLM["Claude via Anthropic API / Amazon Bedrock"]
         DB --> Publish["publish: static site + S3 snapshot"]
     end
@@ -59,7 +59,7 @@ open-source repo, not the network layer alone — see
 
 ```
 src/forecaster/        the pipeline: ingest, forecast, resolve, publish, API
-  sources/              Manifold + GDELT clients (sources/http.py is the one HTTP seam tests mock)
+  sources/              Manifold + GDELT/NewsAPI clients (sources/http.py is the one HTTP seam tests mock)
   llm/                  fake / Anthropic / Bedrock model clients behind one interface
   prompts/forecast_v1.md
 notebooks/              six short notebooks teaching the scoring/calibration ideas this is built on

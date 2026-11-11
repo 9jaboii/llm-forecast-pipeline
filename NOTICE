@@ -2,10 +2,16 @@ LLM Forecast Pipeline
 Copyright 2026 Benedict Mbakogu — Lone Cowry Ventures (https://lonecowry.com)
 
 This product includes news article metadata (URL, headline, domain, date)
-retrieved from the GDELT Project (https://www.gdeltproject.org/). Article
-bodies are never downloaded or redistributed; headlines are used only as
-private model input. "GDELT" and "The GDELT Project" are credited here and
-on the published track-record site as required by the GDELT terms of use.
+retrieved from the GDELT Project (https://www.gdeltproject.org/) and/or
+NewsAPI.org (https://newsapi.org/), depending on configuration (see
+docs/adr/0007-swappable-news-provider.md). Article bodies are never
+downloaded or redistributed; headlines are used only as private model
+input. Both sources are credited here and on the published track-record
+site.
+
+NewsAPI.org's free "Developer" plan restricts use to development/testing,
+not a live production application — disclosed here rather than glossed
+over; see its terms at https://newsapi.org/terms.
 
 This product retrieves public question and market data from Manifold
 Markets (https://manifold.markets/) via its public read API. Only question

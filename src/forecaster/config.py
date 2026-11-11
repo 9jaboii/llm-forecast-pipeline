@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     MAX_QUESTIONS: int = 25
     MIN_BETTORS: int = 10
 
+    NEWS_PROVIDER: str = "gdelt"  # gdelt | newsapi
+    NEWSAPI_KEY: str | None = None
+
     TRACK_RECORD_DIR: str = "./public"
     TRACK_RECORD_BUCKET: str | None = None
     CALIBRATOR_PATH: str = "./models/calibrator.json"
